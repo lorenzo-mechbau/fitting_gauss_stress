@@ -1,0 +1,29 @@
+gfx read node Cantilever.part0.exnode
+gfx read elem Cantilever.part0.exelem
+
+gfx def faces egroup CantileverRegion
+
+#Create the graphics window and set view angles
+gfx create window 1 double_buffer;
+gfx modify window 1 image add_light default;
+gfx modify window 1 layout simple ortho_axes z -y eye_spacing 0.25 height 1000 width 2000;
+gfx modify window 1 set current_pane 1;
+gfx modify window 1 background colour 0 0 0 texture none;
+gfx modify window 1 view parallel eye_point -35.0 20.0 35.0 interest_point 5.0 5.0 15.0 up_vector 0.30 0.95 -0.10 view_angle 40 near_clipping_plane 0.01 far_clipping_plane 150.0
+
+gfx define field Deformed component ElasticityDependent.1 ElasticityDependent.2 ElasticityDependent.3
+gfx define field Pressure component ElasticityDependent.4
+
+gfx create spectrum StressSpectrum;
+gfx modify spectrum StressSpectrum clear overwrite_colour;
+gfx modify spectrum StressSpectrum linear range 0.0 300.0 extend_above extend_below white_to_red colour_range 0 1 component 1;
+
+#Display undeformed solid lines
+gfx modify g_element CantileverRegion lines coordinate Geometry tessellation default LOCAL native_discretization NONE select_on material default selected_material default_selected;
+#Display undeformed solid nodes
+gfx modify g_element CantileverRegion node_points coordinate Geometry LOCAL glyph sphere general size "0.1*0.1*0.1" centre 0,0,0 label cmiss_number font default select_on material default selected_material default_selected;
+
+#Display deformed solid lines
+gfx modify g_element CantileverRegion lines coordinate Deformed material red
+#Display deformed solid surface
+gfx modify g_element CantileverRegion surfaces coordinate Deformed exterior tessellation default LOCAL native_discretization NONE select_on material muscle selected_material default_selected render_shaded;
