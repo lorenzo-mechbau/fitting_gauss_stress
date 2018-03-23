@@ -91,7 +91,6 @@ fittingEquationsSetUserNumber = 2
 fittingEquationsSetFieldUserNumber = 9
 fittingDependentFieldUserNumber = 10
 fittingMaterialsFieldUserNumber = 11
-fittingIndependentFieldUserNumber = 12
 fittingProblemUserNumber = 2
 
 numberOfGauss = pow(numberOfGaussXi,3)
@@ -111,14 +110,14 @@ if len(sys.argv) > 1:
         tau = float(sys.argv[4])
         kappa = float(sys.argv[5])
     else:
-        tau = 0.1
-        kappa = 0.005
+        tau = 0.01
+        kappa = 0.0005
 else:
     numberOfGlobalXElements = 1
     numberOfGlobalYElements = 1
     numberOfGlobalZElements = 3
-    tau = 0.1
-    kappa = 0.005
+    tau = 0.001
+    kappa = 0.00005
 
 numberOfNodesXi = 3
 numberOfXNodes = numberOfGlobalXElements*(numberOfNodesXi-1)+1
@@ -241,32 +240,48 @@ iron.Field.ParametersToFieldParametersComponentCopy(
 iron.Field.ComponentValuesInitialiseDP(
     elasticityDependentField,iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,4,pInit)
 
-# Create a field for the stress field
+# Create a field for the stress field. We will use this as the independent field for fitting to save a field copy. 
 elasticityStressField = iron.Field()
 elasticityStressField.CreateStart(elasticityStressFieldUserNumber,region)
 elasticityStressField.TypeSet(iron.FieldTypes.GENERAL)
 elasticityStressField.MeshDecompositionSet(decomposition)
 elasticityStressField.GeometricFieldSet(geometricField)
 elasticityStressField.DependentTypeSet(iron.FieldDependentTypes.DEPENDENT)
-elasticityStressField.VariableLabelSet(iron.FieldVariableTypes.U,"Stress")
+elasticityStressField.NumberOfVariablesSet(2)
+elasticityStressField.VariableTypesSet([iron.FieldVariableTypes.U,iron.FieldVariableTypes.V])
+elasticityStressField.VariableLabelSet(iron.FieldVariableTypes.U,"GaussStress")
+elasticityStressField.VariableLabelSet(iron.FieldVariableTypes.V,"GaussWeight")
 elasticityStressField.NumberOfComponentsSet(iron.FieldVariableTypes.U,6)
+elasticityStressField.NumberOfComponentsSet(iron.FieldVariableTypes.V,6)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,1,1)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,2,1)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,3,1)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,4,1)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,5,1)
 elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,6,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,1,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,2,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,3,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,4,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,5,1)
+elasticityStressField.ComponentMeshComponentSet(iron.FieldVariableTypes.V,6,1)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,1,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,2,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,3,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,4,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,5,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.U,6,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,1,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,2,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,3,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,4,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,5,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
+elasticityStressField.ComponentInterpolationSet(iron.FieldVariableTypes.V,6,iron.FieldInterpolationTypes.GAUSS_POINT_BASED)
 elasticityStressField.CreateFinish()
 
 # Create the derived equations set stress fields
 elasticityEquationsSet.DerivedCreateStart(elasticityStressFieldUserNumber,elasticityStressField)
-elasticityEquationsSet.DerivedVariableSet(iron.EquationsSetDerivedTypes.STRESS,iron.FieldVariableTypes.U)
+elasticityEquationsSet.DerivedVariableSet(iron.EquationsSetDerivedTensorTypes.CAUCHY_STRESS,iron.FieldVariableTypes.U)
 elasticityEquationsSet.DerivedCreateFinish()
 
 # Create the material field
@@ -326,30 +341,18 @@ fittingDependentField.ComponentMeshComponentSet(iron.FieldVariableTypes.DELUDELN
 # Finish creating the fitting dependent field
 fittingEquationsSet.DependentCreateFinish()
 
-# Create the fitting independent field
-fittingIndependentField = iron.Field()
-fittingEquationsSet.IndependentCreateStart(fittingIndependentFieldUserNumber,fittingIndependentField)
-fittingIndependentField.VariableLabelSet(iron.FieldVariableTypes.U,"GaussStress")
-fittingIndependentField.VariableLabelSet(iron.FieldVariableTypes.V,"GaussWeight")
-# Set the number of components to 6
-fittingIndependentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,6)
-fittingIndependentField.NumberOfComponentsSet(iron.FieldVariableTypes.V,6)
+# Create the fitting independent field. Use the previously created elasticity stress field
+fittingEquationsSet.IndependentCreateStart(elasticityStressFieldUserNumber,elasticityStressField)
 # Finish creating the fitting independent field
 fittingEquationsSet.IndependentCreateFinish()
-# Initialise Gauss point vector field to 0.0
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,1,0.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,2,0.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,3,0.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,4,0.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,5,0.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,6,0.0)
+
 # Initialise Gauss point weight field to 1.0
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,1,1.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,2,1.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,3,1.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,4,1.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,5,1.0)
-fittingIndependentField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,6,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,1,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,2,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,3,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,4,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,5,1.0)
+elasticityStressField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.V,iron.FieldParameterSetTypes.VALUES,6,1.0)
 
 # Create material field (Sobolev parameters)
 fittingMaterialField = iron.Field()
@@ -466,39 +469,14 @@ fittingProblem.SolverEquationsCreateFinish()
 # Prescribe boundary conditions for the fitting problem
 fittingBoundaryConditions = iron.BoundaryConditions()
 fittingSolverEquations.BoundaryConditionsCreateStart(fittingBoundaryConditions)
-fittingBoundaryConditions.SetNode(fittingDependentField,iron.FieldVariableTypes.U,
-	                          1,iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV,1,1,
-                                  iron.BoundaryConditionsTypes.FIXED,1.0)	
 fittingSolverEquations.BoundaryConditionsCreateFinish()
-
-# Export results
-fields = iron.Fields()
-fields.CreateRegion(region)
-fields.NodesExport("Cantilever","FORTRAN")
-fields.ElementsExport("Cantilever","FORTRAN")
-fields.Finalise()
 
 # Solve the elasticity problem
 elasticityProblem.Solve()
 
-# Evaluate the stress field
-#elasticityEquationsSet.DerivedVariableCalculate(iron.EquationsSetDerivedTypes.STRESS)
-
-# Set up the fitting independent field
-for lengthIdx in range(1,numberOfGlobalZElements+1):
-    for heightIdx in range(1,numberOfGlobalYElements+1):
-        for widthIdx in range(1,numberOfGlobalXElements+1):
-            elementNumber = widthIdx+(heightIdx-1)*numberOfGlobalXElements+\
-                            (lengthIdx-1)*numberOfGlobalXElements*numberOfGlobalYElements
-            for gaussIdx in range(1,numberOfGauss+1):
-                for componentIdx in range(1,7):
-	            stress = elasticityStressField.ParameterSetGetGaussPointDP(iron.FieldVariableTypes.U,
-				                                                  iron.FieldParameterSetTypes.VALUES,
-                                                                                  gaussIdx,elementNumber,componentIdx)
-	            fittingIndependentField.ParameterSetAddGaussPointDP(iron.FieldVariableTypes.U,
-			    	                                        iron.FieldParameterSetTypes.VALUES,
-                                                                        gaussIdx,elementNumber,componentIdx,stress)
-
+# Calculate the stress field
+elasticityEquationsSet.DerivedVariableCalculate(iron.EquationsSetDerivedTensorTypes.CAUCHY_STRESS)
+                        
 # Solve the fitting problem
 fittingProblem.Solve()
                     
