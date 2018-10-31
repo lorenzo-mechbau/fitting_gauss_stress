@@ -132,7 +132,6 @@ numberOfNodes = numberOfXNodes*numberOfYNodes*numberOfZNodes
 numberOfComputationalNodes = iron.ComputationalNumberOfNodesGet()
 computationalNodeNumber = iron.ComputationalNodeNumberGet()
 
-
 # Create a 3D rectangular cartesian coordinate system
 coordinateSystem = iron.CoordinateSystem()
 coordinateSystem.CreateStart(coordinateSystemUserNumber)
