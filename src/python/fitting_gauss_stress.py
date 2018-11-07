@@ -490,3 +490,6 @@ fields.NodesExport("Cantilever","FORTRAN")
 fields.ElementsExport("Cantilever","FORTRAN")
 fields.Finalise()
 
+# Finalise OpenCMISS-Iron
+iron.Finalise()
+
